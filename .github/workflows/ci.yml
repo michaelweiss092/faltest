@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches:
+    - master
+  pull_request:
+
+env:
+  DEBUG: "@faltest*,faltest-helpers"
+  DETECT_CHROMEDRIVER_VERSION: true
+  # GECKODRIVER_SKIP_DOWNLOAD: true
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1.1.0
+
+    - run: yarn --frozen-lockfile
+    - run: yarn lint:git
+
+  test:
+    needs: lint
+
+    strategy:
+      matrix:
+        os:
+        - ubuntu-latest
+        node:
+        - 8
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v1.1.0
+      with:
+        version: ${{ matrix.node }}
+
+    # - run: echo "::set-env name=GECKODRIVER_FILEPATH::$(echo $GECKOWEBDRIVER)"
+    - run: yarn --frozen-lockfile
+    - run: which geckodriver
+    # - run: echo "::add-path::$(echo $GECKOWEBDRIVER)"
+    - run: yarn test
+      env:
+        WEBDRIVER_HEADLESS: true
